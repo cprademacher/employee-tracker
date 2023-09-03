@@ -5,25 +5,28 @@ USE company_db;
 
 CREATE TABLE departments(
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    name TEXT NOT NULL
+    name VARCHAR(30) NOT NULL
 );
 
 CREATE TABLE roles(
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    -- I believe each table wont have a primary key, but one will
-    -- and the others will pull from foreign key, but I'll have to double check
-    title TEXT NOT NULL,
-    department TEXT NOT NULL,
-    salary INT NOT NULL
+    title VARCHAR(30) NOT NULL,
+    salary INT NOT NULL,
+    department INT,
+    FOREIGN KEY (department)
+    REFERENCES departments(id)
+    ON DELETE SET NULL
 );
 
 CREATE TABLE employees(
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    title TEXT NOT NULL,
-    department TEXT NOT NULL,
-    -- above will have to be foreign key I think
-    salary INT NOT NULL,
-    manager TEXT NOT NULL
+    first_name VARCHAR(30) NOT NULL,
+    last_name VARCHAR(30) NOT NULL,
+    role_id INT,
+    FOREIGN KEY (role_id)
+    REFERENCES roles(id)
+    ON DELETE SET NULL,
+    manager_id INT,
+    FOREIGN KEY (manager_id)
+    REFERENCES employees(id)
 );
