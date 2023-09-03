@@ -35,6 +35,12 @@ const firstQuestion = {
   name: "options",
 };
 
-inquirer.prompt(firstQuestion).then((answers => {
-  console.log(answers.options);
-}));
+inquirer.prompt(firstQuestion).then((answers) => {
+  if (answers.options === "View all employees") {
+    console.log("success!");
+  } else {
+    console.log("failure");
+  }
+});
+// Got it to successfully know when I am choosing a certain answer, need to then make it
+// run a command with mysql2 to pull info from the database.
