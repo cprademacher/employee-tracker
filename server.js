@@ -60,7 +60,7 @@ const addRoleQuestions = [
   {
     type: "list",
     message: "Which department is this role a part of? ",
-    options: [1, 2, 3, 4, 5],
+    choices: [1, 2, 3, 4, 5],
     name: "roleDepartment",
   },
 ];
@@ -79,13 +79,13 @@ const addEmployeeQuestions = [
   {
     type: "list",
     message: "What will this employee's role be? ",
-    options: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    choices: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     name: "employeeRole",
   },
   {
     type: "list",
     message: "Who is the employee's manager? ",
-    options: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    choices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     name: "employeeManager",
   },
 ];
@@ -98,12 +98,16 @@ function getAnswers() {
         return getAnswers();
       });
     } else if (answers.options === "View all roles") {
-      db.query("SELECT * FROM roles", function (err, results) {
-        console.log(results);
-        return getAnswers();
-      });
+      db.query(
+        "SELECT * FROM roles JOIN departments ON roles.department = departments.id;",
+        function (err, results) {
+          console.log(results);
+          return getAnswers();
+        }
+      );
     } else if (answers.options === "View all employees") {
-      db.query("SELECT * FROM employees", function (err, results) {
+      db.query("SELECT * FROM employees JOIN roles ON employees.role_id = roles.id;", function (err, results) {
+        // Need to fix the above to include manager's name
         console.log(results);
         return getAnswers();
       });
@@ -124,9 +128,12 @@ function getAnswers() {
         const newRoleTitle = roleAnswers.roleTitle;
         const newRoleSalary = roleAnswers.roleSalary;
         const newRoleDepartment = roleAnswers.roleDepartment;
+        console.log(newRoleTitle);
+        console.log(newRoleSalary);
+        console.log(newRoleDepartment);
 
         db.query(
-          `INSERT INTO roles (title, salary, department) VALUES ("${newRoleTitle}"), (${newRoleSalary}), (${newRoleDepartment})`,
+          `INSERT INTO roles (title, salary, department) VALUES ("${newRoleTitle}", ${newRoleSalary}, ${newRoleDepartment})`,
           function (err, results) {
             console.log(results);
             return getAnswers();
@@ -141,7 +148,7 @@ function getAnswers() {
         const newEmployeeManager = employeeAnswers.employeeManager;
 
         db.query(
-          `INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES ("${newEmployeeFirstName}"), ("${newEmployeeLastName}"), (${newEmployeeRole}), (${newEmployeeManager})`,
+          `INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES ("${newEmployeeFirstName}", "${newEmployeeLastName}", ${newEmployeeRole}, ${newEmployeeManager})`,
           function (err, results) {
             console.log(results);
             return getAnswers();
@@ -166,7 +173,5 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}.`);
 });
 
-
-// Issues still existing.  Follow up questions on adding role and employee are
-// throwing errors.  Initial question when prompted is loading the questions over
-// and over again instead of once each.
+// Older issues fixed, need to still add manager's name when querying employees
+// also need to add the UPDATE statement
