@@ -108,15 +108,23 @@ const updateEmployeeRoleQuestions = [
 function getAnswers() {
   return inquirer.prompt(firstQuestion).then((answers) => {
     if (answers.options === "View all departments") {
-      db.query("SELECT name FROM departments", function (err, results) {
-        console.table(results);
+      db.query("SELECT * FROM departments", function (err, results) {
+        if (err) {
+          console.log(err);
+        } else {
+          console.table(results);
+        }
         return getAnswers();
       });
     } else if (answers.options === "View all roles") {
       db.query(
         "SELECT title, salary, name FROM roles JOIN departments ON roles.department = departments.id;",
         function (err, results) {
-          console.table(results);
+          if (err) {
+            console.log(err);
+          } else {
+            console.table(results);
+          }
           return getAnswers();
         }
       );
@@ -124,7 +132,11 @@ function getAnswers() {
       db.query(
         "SELECT e.first_name AS employee_first_name, e.last_name AS employee_last_name, r.title AS employee_title, m.first_name AS manager_first_name, m.last_name AS manager_last_name FROM employees AS e JOIN roles AS r ON e.role_id = r.id LEFT JOIN employees AS m ON e.manager_id = m.id;",
         function (err, results) {
-          console.table(results);
+          if (err) {
+            console.log(err);
+          } else {
+            console.table(results);
+          }
           return getAnswers();
         }
       );
@@ -135,7 +147,11 @@ function getAnswers() {
         db.query(
           `INSERT INTO departments (name) VALUES ("${newDept}")`,
           function (err, results) {
-            console.table(results);
+            if (err) {
+              console.log(err);
+            } else {
+              console.table(results);
+            }
             return getAnswers();
           }
         );
@@ -152,7 +168,11 @@ function getAnswers() {
         db.query(
           `INSERT INTO roles (title, salary, department) VALUES ("${newRoleTitle}", ${newRoleSalary}, ${newRoleDepartment})`,
           function (err, results) {
-            console.table(results);
+            if (err) {
+              console.log(err);
+            } else {
+              console.table(results);
+            }
             return getAnswers();
           }
         );
@@ -165,9 +185,15 @@ function getAnswers() {
         const newEmployeeManager = employeeAnswers.employeeManager;
 
         db.query(
-          `INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES ("${newEmployeeFirstName}", "${newEmployeeLastName}", ${newEmployeeRole}, ${newEmployeeManager});`,
+          `INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?);`,
+          [
+            newEmployeeFirstName,
+            newEmployeeLastName,
+            newEmployeeRole,
+            newEmployeeManager,
+          ],
           function (err, results) {
-            if(err) {
+            if (err) {
               console.log(err);
             } else {
               console.table(results);
