@@ -90,27 +90,56 @@ const addEmployeeQuestions = [
   },
 ];
 
+const updateEmployeeRoleQuestions = [
+  {
+    type: "list",
+    message: "Which employee would you like to update? ",
+    choices: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    name: "employee_id",
+  },
+  {
+    type: "list",
+    message: "Which role would you like to choose? ",
+    choices: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    name: "role_id",
+  },
+];
+
 function getAnswers() {
   return inquirer.prompt(firstQuestion).then((answers) => {
     if (answers.options === "View all departments") {
       db.query("SELECT * FROM departments", function (err, results) {
-        console.log(results);
+        if (err) {
+          console.log(err);
+        } else {
+          console.table(results);
+        }
         return getAnswers();
       });
     } else if (answers.options === "View all roles") {
       db.query(
-        "SELECT * FROM roles JOIN departments ON roles.department = departments.id;",
+        "SELECT title, salary, name FROM roles JOIN departments ON roles.department = departments.id;",
         function (err, results) {
-          console.log(results);
+          if (err) {
+            console.log(err);
+          } else {
+            console.table(results);
+          }
           return getAnswers();
         }
       );
     } else if (answers.options === "View all employees") {
-      db.query("SELECT * FROM employees JOIN roles ON employees.role_id = roles.id;", function (err, results) {
-        // Need to fix the above to include manager's name
-        console.log(results);
-        return getAnswers();
-      });
+      db.query(
+        "SELECT e.first_name AS employee_first_name, e.last_name AS employee_last_name, r.title AS employee_title, m.first_name AS manager_first_name, m.last_name AS manager_last_name FROM employees AS e JOIN roles AS r ON e.role_id = r.id LEFT JOIN employees AS m ON e.manager_id = m.id;",
+        function (err, results) {
+          if (err) {
+            console.log(err);
+          } else {
+            console.table(results);
+          }
+          return getAnswers();
+        }
+      );
     } else if (answers.options === "Add a department") {
       inquirer.prompt(addDepartmentQuestion).then((departmentAnswers) => {
         const newDept = departmentAnswers.departmentName;
@@ -118,7 +147,11 @@ function getAnswers() {
         db.query(
           `INSERT INTO departments (name) VALUES ("${newDept}")`,
           function (err, results) {
-            console.log(results);
+            if (err) {
+              console.log(err);
+            } else {
+              console.table(results);
+            }
             return getAnswers();
           }
         );
@@ -135,7 +168,11 @@ function getAnswers() {
         db.query(
           `INSERT INTO roles (title, salary, department) VALUES ("${newRoleTitle}", ${newRoleSalary}, ${newRoleDepartment})`,
           function (err, results) {
-            console.log(results);
+            if (err) {
+              console.log(err);
+            } else {
+              console.table(results);
+            }
             return getAnswers();
           }
         );
@@ -148,15 +185,36 @@ function getAnswers() {
         const newEmployeeManager = employeeAnswers.employeeManager;
 
         db.query(
-          `INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES ("${newEmployeeFirstName}", "${newEmployeeLastName}", ${newEmployeeRole}, ${newEmployeeManager})`,
+          `INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?);`,
+          [
+            newEmployeeFirstName,
+            newEmployeeLastName,
+            newEmployeeRole,
+            newEmployeeManager,
+          ],
           function (err, results) {
-            console.log(results);
+            if (err) {
+              console.log(err);
+            } else {
+              console.table(results);
+            }
             return getAnswers();
           }
         );
       });
     } else if (answers.options === "Update an employee role") {
-      console.log("Update an employee");
+      inquirer.prompt(updateEmployeeRoleQuestions).then((updateRoleAnswers) => {
+        const updatedRole = updateRoleAnswers.role_id;
+        const employeeId = updateRoleAnswers.employee_id;
+
+        db.query(
+          `UPDATE employees SET role_id = ${updatedRole} WHERE id = ${employeeId};`,
+          function (err, results) {
+            console.table(results);
+            return getAnswers();
+          }
+        );
+      });
     } else if (answers.options === "Quit") {
       process.exit();
     }
@@ -166,7 +224,7 @@ function getAnswers() {
 getAnswers();
 
 app.use((req, res) => {
-  res.stats(404).end();
+  res.status(404).end();
 });
 
 app.listen(PORT, () => {
@@ -174,4 +232,5 @@ app.listen(PORT, () => {
 });
 
 // Older issues fixed, need to still add manager's name when querying employees
-// also need to add the UPDATE statement
+// also need to fix the UPDATE statement.  It is currently updating the selected
+// person and updating their role, but also udpated their id for some reason.
